@@ -7,7 +7,7 @@ Max-flow / min-cut analysis of the male *Drosophila* CNS connectome, validated w
 ## Status
 
 - [x] 0. Setup
-- [ ] 1. Ingestion
+- [x] 1. Ingestion
 - [ ] 2. Graph and EDA
 - [ ] 3. Source and sink sets
 - [ ] 4. Max-flow / min-cut
@@ -42,4 +42,22 @@ reports/         figures and write-up
 
 ## Data
 
-Connectome from neuPrint (Janelia / Google Research), male CNS. Details added once ingestion is done.
+Connectome from neuPrint (Janelia FlyEM, Cambridge, Google Connectomics), dataset `male-cns:v1.0`
+(last database edit 2026-03-28, segment property update 2026-06-08).
+
+```powershell
+python src/inspect_schema.py --dataset male-cns:v1.0   # read-only schema probe
+python src/ingest.py --dataset male-cns:v1.0           # cached pull; --refresh to re-pull, --report for counts only
+```
+
+The full pull takes about 10 minutes. It writes `neurons.parquet` (11 MB) and `edges/` (163 MB) to `data/raw/male-cns_v1.0/`.
+
+| | pulled | published |
+|---|---|---|
+| `:Neuron` nodes | 176,422 | |
+| neurons with `superclass` | 166,700 | ~166,700 |
+| neuron→neuron edges | 25,862,574 | |
+| synapses (sum of `weight`) | 125,024,863 | ~125M |
+| synapses (sum of `weightHP`) | 107,079,478 | |
+
+Edges kept at each synapse threshold: ≥3: 10.6M (105.0M synapses), ≥5: 6.3M (90.3M), ≥10: 2.8M (67.5M).

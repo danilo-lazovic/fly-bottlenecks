@@ -1,6 +1,10 @@
 # Python 3.12.10. Pinned to what is actually installed; add packages as modules need them.
+# pandas and scipy are held back on purpose: Windows Smart App Control blocked native DLLs in
+# pandas 3.0.6 and scipy 1.18.1 on the home machine; these versions load.
 neuprint-python==0.6.3
-pandas==3.0.6
+pandas==2.3.3
+scipy==1.15.3
+numpy==2.4.6
 pyarrow==25.0.1
 python-dotenv==1.2.3
 tqdm==4.70.1
