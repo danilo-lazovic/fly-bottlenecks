@@ -8,7 +8,7 @@ Max-flow / min-cut analysis of the male *Drosophila* CNS connectome, validated w
 
 - [x] 0. Setup
 - [x] 1. Ingestion
-- [ ] 2. Graph and EDA
+- [x] 2. Graph and EDA
 - [ ] 3. Source and sink sets
 - [ ] 4. Max-flow / min-cut
 - [ ] 5. Simulation and ablation
@@ -61,3 +61,16 @@ The full pull takes about 10 minutes. It writes `neurons.parquet` (11 MB) and `e
 | synapses (sum of `weightHP`) | 107,079,478 | |
 
 Edges kept at each synapse threshold: ≥3: 10.6M (105.0M synapses), ≥5: 6.3M (90.3M), ≥10: 2.8M (67.5M).
+
+## Graph
+
+```powershell
+python src/graph.py --dataset male-cns:v1.0   # builds data/processed/male-cns_v1.0/
+python src/eda.py --dataset male-cns:v1.0     # writes eda.json there
+```
+
+174,386 neurons with at least one edge and 25,862,452 edges (122 self-loops dropped). `weightHR` equals `weight` on every edge, so it is not kept. The whole graph loads as a sparse matrix in about 1 s and takes 208 MB. At ≥5 synapses it takes 51 MB.
+
+**Neurotransmitter sign** (`consensusNt`, by presynaptic neuron): acetylcholine = excitatory; GABA, glutamate and histamine = inhibitory; dopamine, serotonin, octopamine and unclear = no sign. That gives a known sign for 93.9% of neurons. 59% of synapses are cholinergic, and those form the excitatory subgraph. These are predictions, not measurements. Median prediction confidence is 0.96 for ACh, 0.86 for GABA and 0.81 for glutamate. `consensusNt` agrees with the per-neuron `predictedNt` for 88.4% of neurons. Glutamate is inhibitory at most central synapses but not all.
+
+Caveat for the excitatory subgraph: all 6,093 photoreceptors (`ol_sensory`) are histaminergic, so an ACh-only graph has no edges leaving the visual sensory set.
