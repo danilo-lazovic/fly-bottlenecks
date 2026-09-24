@@ -15,6 +15,10 @@ __pycache__/
 .cache/
 *.log
 
+# generated pages (rebuild with src/viz.py) and local tool config
+reports/*.html
+.claude/
+
 # OS / editor
 Thumbs.db
 .DS_Store

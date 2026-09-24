@@ -8,3 +8,7 @@ numpy==2.4.6
 pyarrow==25.0.1
 python-dotenv==1.2.3
 tqdm==4.70.1
+ortools==9.15.6755
+igraph==1.0.0
+networkx==3.7
+pytest==9.1.1

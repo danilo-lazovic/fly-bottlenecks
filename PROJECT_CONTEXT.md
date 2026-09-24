@@ -75,6 +75,8 @@ git init, venv, `.gitignore` (data/, .env, caches), `requirements.txt` filled fr
 - Robustness: does the cut set stay stable across synapse thresholds (3/5/10)? Report overlap (Jaccard).
 - Test: on a small synthetic graph with a known min-cut, flow value matches.
 
+**Change after running it (2026-09-24):** cutting a modality off from *all* descending neurons returns its whole first relay layer (hundreds to thousands of neurons), so it answers nothing. The main analysis now uses behaviour-specific targets (vision → giant fiber DNp01, head taste → MN9). Capacity is a unit node cut on edges carrying ≥1% of the postsynaptic neuron's input, with 0/0.5/2% and synapse thresholds 3/5/10 as robustness checks. Baselines are evaluated as the synapse flow remaining on the full graph after removing k neurons. The all-descending cut is kept as Finding 1. Known limitation: the per-edge input-share filter breaks highly convergent pathways (T4/T5 → LPLC2), so a cell-type-level graph is the next step.
+
 ### 5. Simulation and ablation
 - LIF model based on Shiu et al. 2024 (repo `philshiu/Drosophila_brain_model`, Brian2). First reproduce it on its original data if feasible, then port to male CNS edge list.
 - Sign weights by predicted neurotransmitter.

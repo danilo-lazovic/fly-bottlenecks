@@ -113,6 +113,21 @@ def load_graph(dataset, min_weight=1, weight_col="weight", excitatory_only=False
     return adj, neurons
 
 
+def input_share_filter(adj, min_share, in_strength=None):
+    """Keep edges u->v that make up at least `min_share` of v's total input synapses.
+
+    in_strength defaults to adj's own column sums; pass the full graph's to keep shares comparable across
+    synapse thresholds.
+    """
+    if min_share <= 0:
+        return adj
+    if in_strength is None:
+        in_strength = np.asarray(adj.sum(0)).ravel()
+    coo = adj.tocoo()
+    keep = coo.data >= min_share * in_strength[coo.col]
+    return sp.csr_matrix((coo.data[keep], (coo.row[keep], coo.col[keep])), shape=adj.shape)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", required=True)

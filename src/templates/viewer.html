@@ -1,0 +1,245 @@
+<meta charset="utf-8">
+<title>Fly Brain Bottlenecks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+  /* One deliberate look: a fluorescence-microscopy dark field, in every theme. */
+  :root {
+    color-scheme: dark;
+    --ground: #0a0d12;
+    --panel: #11161e;
+    --line: #232d3a;
+    --ink: #dfe6ee;
+    --muted: #8a98a9;
+    --source: #3fb6c9;
+    --cut: #ff4f8b;
+    --sink: #ffc24a;
+    --known: #b192ff;
+    --mesh: #5b6b80;
+    --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --cond: "IBM Plex Sans Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+  html, body { background: var(--ground); color: var(--ink); }
+  body { font-family: var(--sans); font-size: 15px; line-height: 1.5; padding-inline: 16px; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding-block: 20px 40px; display: grid; gap: 18px; }
+  header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+  h1 { font-family: var(--cond); font-weight: 600; font-size: clamp(24px, 3.2vw, 34px); letter-spacing: .01em;
+       margin: 0; text-wrap: balance; }
+  .sub { color: var(--muted); margin: 2px 0 0; max-width: 62ch; }
+  .switch { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 3px;
+            background: var(--panel); flex-wrap: wrap; }
+  .switch button { font: 500 14px/1 var(--cond); letter-spacing: .02em; color: var(--muted); background: none;
+                   border: 0; border-radius: 6px; padding: 9px 14px; cursor: pointer; }
+  .switch button[aria-pressed="true"] { background: var(--line); color: var(--ink); }
+  .switch button:focus-visible, .toggle input:focus-visible + span { outline: 2px solid var(--sink); outline-offset: 2px; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+  #plot { height: min(78vh, 780px); min-height: 420px; border: 1px solid var(--line); border-radius: 10px;
+          background: radial-gradient(ellipse at 50% 40%, #121a24 0%, var(--ground) 70%); overflow: hidden; }
+  aside { display: grid; gap: 14px; }
+  section.box { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; }
+  .label { font: 600 12px/1.2 var(--cond); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+  .toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .toggle input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .swatch { width: 14px; height: 14px; border-radius: 3px; border: 2px solid currentColor; flex: none; }
+  .toggle input:checked + .swatch { background: currentColor; }
+  .toggle .name { flex: 1; }
+  .toggle .n { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .big { display: flex; align-items: baseline; gap: 10px; }
+  .big b { font: 600 44px/1 var(--cond); color: var(--cut); font-variant-numeric: tabular-nums; }
+  .big span { color: var(--muted); }
+  .note { color: var(--muted); font-size: 13.5px; margin: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font: 13px/1 var(--mono); padding: 5px 7px; border-radius: 5px; background: #1b2230;
+          border: 1px solid var(--line); }
+  .chip i { font-style: normal; color: var(--muted); margin-left: 4px; }
+  .rows { display: grid; grid-template-columns: auto 1fr auto; gap: 5px 10px; align-items: center;
+          font-size: 13px; }
+  .rows .k { font-family: var(--mono); color: var(--muted); white-space: nowrap; }
+  .rows .v { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+  .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  .bar > div { height: 100%; background: var(--ink); opacity: .75; }
+  svg text { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 14px;
+           display: grid; gap: 6px; max-width: 90ch; }
+  footer p { margin: 0; }
+  @media (max-width: 900px) {
+    main { grid-template-columns: minmax(0, 1fr); }
+    #plot { height: 62vh; min-height: 360px; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Fly Brain Bottlenecks</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+    <div class="switch" role="group" aria-label="Pathway" id="switch"></div>
+  </header>
+
+  <main>
+    <div id="plot" role="img" aria-label="3D rendering of the selected pathway"></div>
+    <aside>
+      <section class="box">
+        <div class="label">Layers</div>
+        <div id="layers" style="display:grid;gap:8px"></div>
+        <p class="note">Drag to rotate, scroll to zoom. Hover a neuron for its cell type and body ID.</p>
+      </section>
+      <section class="box">
+        <div class="label">Minimum cut</div>
+        <div class="big"><b id="k"></b><span id="kdesc"></span></div>
+        <div class="chips" id="types"></div>
+      </section>
+      <section class="box">
+        <div class="label">Ablation on the full graph</div>
+        <svg id="abl" viewBox="0 0 320 150" width="100%" aria-label="Remaining synapse flow after removing k neurons"></svg>
+        <p class="note">Share of source&rarr;target synapse flow left after removing the same number of neurons with each strategy. Lower means the removed set mattered more.</p>
+      </section>
+      <section class="box">
+        <div class="label">Stability of the cut (Jaccard vs main)</div>
+        <div class="rows" id="robust"></div>
+      </section>
+    </aside>
+  </main>
+
+  <footer>
+    <p id="ref"></p>
+    <p>Male CNS connectome v1.0 (neuPrint, Janelia FlyEM / Cambridge / Google). Node cut with unit capacity on edges carrying at least <span id="share"></span> of the postsynaptic neuron's input; direct source&rarr;target synapses are excluded. Skeletons simplified for display; sources are a random sample.</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.0.1/plotly.min.js"></script>
+<script>
+const DATA = /*__DATA__*/null;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = { sources: css('--source'), cut: css('--cut'), sink: css('--sink'), known: css('--known'), mesh: css('--mesh') };
+const NAMES = {
+  vision_to_giant_fiber: { title: 'Vision → giant fiber', sub: 'Photoreceptors to DNp01, the descending neuron that triggers escape takeoff.', target: 'giant fiber (DNp01)' },
+  taste_to_mn9: { title: 'Taste → MN9', sub: 'Head gustatory neurons to MN9, the motor neuron that extends the proboscis during feeding.', target: 'MN9 motor neuron' },
+};
+const GROUP_LABEL = { sources: 'Sensory sources (sample)', cut: 'Min-cut neurons', sink: 'Target', known: 'LPLC2 + LC4 (full-graph cut, sample)' };
+const STRAT = { min_cut: 'min cut', pathway_betweenness: 'path betweenness', pagerank: 'PageRank', out_strength: 'out-strength' };
+const fmt = n => n.toLocaleString('en-US');
+let current = Object.keys(DATA.pathways)[0];
+let groupTraces = {};
+
+function meshTraces() {
+  return Object.entries(DATA.meshes).map(([roi, m]) => ({
+    type: 'mesh3d', x: m.x, y: m.y, z: m.z, i: m.i, j: m.j, k: m.k, name: roi,
+    color: C.mesh, opacity: 0.07, hoverinfo: 'skip', showscale: false, flatshading: true,
+    lighting: { ambient: 0.9, diffuse: 0.2, specular: 0 },
+  }));
+}
+
+function lineTrace(n, color, width, merged) {
+  return {
+    type: 'scatter3d', mode: 'lines', x: n.x, y: n.y, z: n.z, name: n.type,
+    line: { color, width }, connectgaps: false,
+    hovertemplate: merged ? `${n.type}<extra></extra>` : `<b>${n.type}</b><br>${n.superclass}<br>body ${n.bodyId}<extra></extra>`,
+  };
+}
+
+function merge(list, label) {
+  const x = [], y = [], z = [];
+  for (const n of list) { x.push(...n.x, null); y.push(...n.y, null); z.push(...n.z, null); }
+  return { x, y, z, type: label, superclass: '', bodyId: '' };
+}
+
+function build(name) {
+  const p = DATA.pathways[name];
+  const traces = meshTraces();
+  groupTraces = {};
+  const add = (g, arr) => { groupTraces[g] = arr.map((_, i) => traces.length + i); traces.push(...arr); };
+  add('sources', [lineTrace(merge(p.groups.sources, 'sensory source'), C.sources, 1.5, true)]);
+  if (p.groups.known) add('known', p.groups.known.map(n => lineTrace(n, C.known, 2, false)));
+  add('cut', p.groups.cut.map(n => lineTrace(n, C.cut, 3.5, false)));
+  add('sink', p.groups.sink.map(n => lineTrace(n, C.sink, 5, false)));
+
+  const layout = {
+    paper_bgcolor: 'rgba(0,0,0,0)', margin: { l: 0, r: 0, t: 0, b: 0 }, showlegend: false,
+    hoverlabel: { bgcolor: '#11161e', bordercolor: '#232d3a', font: { family: 'IBM Plex Mono, monospace', color: '#dfe6ee', size: 12 } },
+    scene: {
+      aspectmode: 'data', bgcolor: 'rgba(0,0,0,0)',
+      xaxis: { visible: false }, yaxis: { visible: false, autorange: 'reversed' }, zaxis: { visible: false },
+      camera: { up: { x: 0, y: 1, z: 0 }, eye: { x: -0.05, y: 0.35, z: -1.35 } },
+    },
+  };
+  Plotly.react('plot', traces, layout, { displaylogo: false, responsive: true, modeBarButtonsToRemove: ['toImage'] });
+  renderPanel(name);
+}
+
+function renderPanel(name) {
+  const p = DATA.pathways[name], meta = NAMES[name] || { title: name, sub: '', target: p.sink_types.join(', ') };
+  document.getElementById('sub').textContent = meta.sub;
+  const counts = { sources: `${p.groups.sources.length} of ${fmt(p.n_sources)}`, cut: p.groups.cut.length,
+                   sink: p.groups.sink.length, known: p.groups.known ? `${p.groups.known.length} of ${fmt(Object.values(p.known_counts).reduce((a, b) => a + b, 0))}` : '' };
+  const layers = document.getElementById('layers');
+  layers.innerHTML = '';
+  for (const g of ['sources', 'known', 'cut', 'sink']) {
+    if (!groupTraces[g]) continue;
+    const id = `layer-${g}`;
+    const lab = document.createElement('label');
+    lab.className = 'toggle';
+    lab.style.color = C[g];
+    lab.innerHTML = `<input type="checkbox" id="${id}" checked><span class="swatch"></span><span class="name" style="color:var(--ink)">${g === 'sink' ? 'Target: ' + meta.target : GROUP_LABEL[g]}</span><span class="n">${counts[g]}</span>`;
+    lab.querySelector('input').addEventListener('change', e => Plotly.restyle('plot', { visible: e.target.checked }, groupTraces[g]));
+    layers.appendChild(lab);
+  }
+
+  document.getElementById('k').textContent = p.ablation.k;
+  document.getElementById('kdesc').textContent = `neurons separate ${p.source.replace('_', ' ')} from the ${meta.target}`;
+  const byType = {};
+  for (const n of p.groups.cut) byType[n.type] = (byType[n.type] || 0) + 1;
+  document.getElementById('types').innerHTML = Object.entries(byType).sort((a, b) => b[1] - a[1])
+    .map(([t, c]) => `<span class="chip">${t}${c > 1 ? `<i>×${c}</i>` : ''}</span>`).join('');
+
+  drawAblation(p.ablation);
+
+  const rob = document.getElementById('robust');
+  const labelOf = k => k.startsWith('share') && k.includes('_w') ? `${k.split('_w')[1]}+ synapses` : `≥${(parseFloat(k.slice(5)) * 100).toFixed(1).replace('.0', '')}% input`;
+  rob.innerHTML = Object.entries(p.robustness).map(([k, v]) => p.cut_sizes[k] === 0
+    ? `<span class="k">${labelOf(k)}</span><div class="bar"></div><span class="v">no path left</span>`
+    : `<span class="k">${labelOf(k)}</span><div class="bar"><div style="width:${v * 100}%"></div></div><span class="v">${v.toFixed(2)} · ${p.cut_sizes[k]} cells</span>`).join('');
+
+  document.getElementById('share').textContent = `${DATA.main_share * 100}%`;
+  const r = DATA.reference;
+  const t = r.taste_head['share0'];
+  document.getElementById('ref').textContent =
+    `Why single targets: cutting head taste off from all 1,314 descending neurons takes ${fmt(t.cut_size)} neurons, ` +
+    `${Math.round(t.share_of_cut_in_first_layer * 100)}% of them direct partners of the taste neurons. The whole first relay layer is the "bottleneck", which says nothing. ` +
+    `Olfaction (${fmt(r.olfaction.share0.cut_size)}) and Johnston's organ (${fmt(r.johnston_organ.share0.cut_size)}) behave the same way.`;
+  document.querySelectorAll('#switch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === name)));
+}
+
+function drawAblation(a) {
+  const svg = document.getElementById('abl'), W = 320, L = 8, R = 312, X = v => L + v * (R - L);
+  const rv = a.random_values;
+  let s = '';
+  for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+    s += `<line x1="${X(t)}" x2="${X(t)}" y1="18" y2="112" stroke="${css('--line')}" stroke-width="1"/>`;
+    s += `<text x="${X(t)}" y="128" text-anchor="${t === 0 ? 'start' : t === 1 ? 'end' : 'middle'}">${t * 100}%</text>`;
+  }
+  rv.forEach((v, i) => { s += `<circle cx="${X(v)}" cy="${30 + ((i * 37) % 17)}" r="2.6" fill="${css('--muted')}" opacity=".7"/>`; });
+  s += `<text x="${L}" y="12">random on-path (n=${rv.length})</text>`;
+  const rows = Object.entries(a.remaining);
+  rows.forEach(([k, v], i) => {
+    const y = 64 + i * 13, col = k === 'min_cut' ? C.cut : css('--ink');
+    s += `<circle cx="${X(v)}" cy="${y}" r="${k === 'min_cut' ? 4.5 : 3.2}" fill="${col}"/>`;
+    const right = X(v) > W * 0.62;
+    s += `<text x="${X(v) + (right ? -8 : 8)}" y="${y + 3.5}" text-anchor="${right ? 'end' : 'start'}" style="fill:${col}">${STRAT[k] || k} ${(v * 100).toFixed(0)}%</text>`;
+  });
+  s += `<text x="${L}" y="146">remaining synapse flow · k = ${a.k}</text>`;
+  svg.innerHTML = s;
+}
+
+const sw = document.getElementById('switch');
+for (const name of Object.keys(DATA.pathways)) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.dataset.p = name; b.textContent = (NAMES[name] || { title: name }).title;
+  b.addEventListener('click', () => { current = name; build(name); });
+  sw.appendChild(b);
+}
+build(current);
+</script>
