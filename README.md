@@ -9,7 +9,7 @@ Max-flow / min-cut analysis of the male *Drosophila* CNS connectome, validated w
 - [x] 0. Setup
 - [x] 1. Ingestion
 - [x] 2. Graph and EDA
-- [ ] 3. Source and sink sets
+- [x] 3. Source and sink sets
 - [ ] 4. Max-flow / min-cut
 - [ ] 5. Simulation and ablation
 - [ ] 6. Visualization
@@ -74,3 +74,26 @@ python src/eda.py --dataset male-cns:v1.0     # writes eda.json there
 **Neurotransmitter sign** (`consensusNt`, by presynaptic neuron): acetylcholine = excitatory; GABA, glutamate and histamine = inhibitory; dopamine, serotonin, octopamine and unclear = no sign. That gives a known sign for 93.9% of neurons. 59% of synapses are cholinergic, and those form the excitatory subgraph. These are predictions, not measurements. Median prediction confidence is 0.96 for ACh, 0.86 for GABA and 0.81 for glutamate. `consensusNt` agrees with the per-neuron `predictedNt` for 88.4% of neurons. Glutamate is inhibitory at most central synapses but not all.
 
 Caveat for the excitatory subgraph: all 6,093 photoreceptors (`ol_sensory`) are histaminergic, so an ACh-only graph has no edges leaving the visual sensory set.
+
+## Source and sink sets
+
+```powershell
+python src/sets.py --dataset male-cns:v1.0   # writes sets.parquet and sets_report.json (with Neuroglancer spot-check links)
+```
+
+Sources come from the `class` / `subclass` / `superclass` annotations (definitions in `src/sets.py`). Sinks are the 1,314 neurons with `superclass == descending_neuron`; motor neurons (815) are kept as an alternative readout.
+
+| modality | neurons | output synapses | share going directly to DNs | median hops to DNs |
+|---|---|---|---|---|
+| vision (photoreceptors) | 6,086 | 684,494 | 0.0% | 3 |
+| olfaction (ORNs) | 2,639 | 1,364,154 | 0.04% | 2 |
+| taste, head | 275 | 169,010 | 3.4% | 2 |
+| taste, legs/wings | 1,153 | 540,333 | 2.1% | 2 |
+| Johnston's organ | 512 | 231,113 | 15.9% | 2 |
+| head mechanosensory (all) | 1,652 | 576,636 | 21.5% | 2 |
+| touch, body | 2,558 | 1,395,875 | 1.6% | 2 |
+| proprioception | 1,454 | 1,005,570 | 1.7% | 2 |
+| hygrosensation | 66 | 55,757 | 1.0% | 2 |
+| thermosensation | 25 | 50,522 | 0.9% | 2 |
+
+From every modality, all 1,314 descending neurons can be reached.
