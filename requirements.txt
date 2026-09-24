@@ -1,0 +1,6 @@
+# Python 3.12.10. Pinned to what is actually installed; add packages as modules need them.
+neuprint-python==0.6.3
+pandas==3.0.6
+pyarrow==25.0.1
+python-dotenv==1.2.3
+tqdm==4.70.1

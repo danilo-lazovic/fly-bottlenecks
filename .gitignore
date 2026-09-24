@@ -1,0 +1,22 @@
+# secrets
+.env
+
+# data (cached neuPrint pulls and derived results)
+data/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+
+# neuprint-python / misc caches
+.cache/
+*.log
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/
